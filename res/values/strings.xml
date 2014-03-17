@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">DLNA project</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="empty">Empty</string>
+    <string name="loading">Loading...</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="sample_desc">This is a sample of navigation drawer</string>
+    <string name="open_left_drawer">Open Drawer</string>
+    <string name="close_left_drawer">Open Drawer</string>
+    <string name="open_right_drawer">Open Right Drawer</string>
+    <string name="close_right_drawer">Open Right Drawer</string>
+    <string name="open_drawer">Open Drawer</string>
+    <string name="close_drawer">Open Drawer</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="hello_blank_fragment">Empty page</string>
+    <string name="nav_item_dlna_setup">DLNA Setup</string>
+    <string name="nav_item_login">Login</string>
+    <string name="nav_item_social_network">IAC Cloud</string>
+    <string name="title_activity_browse">BrowseActivity</string>
+    <string name="title_activity_start_page">StartPageActivity</string>
+    <string name="source">Media Source</string>
+    <string name="renderer">Media Renderer</string>
+    <string name="media_content">Media Content</string>
+
+</resources>

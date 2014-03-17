@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/llv_right_drawer"
+    android:layout_width="270dp"
+    android:layout_height="match_parent"
+    android:layout_gravity="end"
+    android:background="#fff"
+    android:orientation="vertical" >
+
+    <ListView
+        android:id="@+id/rsv_drawer_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:choiceMode="singleChoice"
+        android:divider="#ffeeeeee"
+        android:dividerHeight="1dp" />
+
+</LinearLayout>

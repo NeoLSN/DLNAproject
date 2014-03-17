@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="navigator_dlna_home_after_login">
+        <item >@string/nav_item_dlna_setup</item>
+        <item >@string/nav_item_social_network</item>
+    </string-array>
+     <string-array name="navigator_dlna_home">
+        <item >@string/nav_item_dlna_setup</item>
+        <item >@string/nav_item_login</item>
+    </string-array>
+    
+</resources>
