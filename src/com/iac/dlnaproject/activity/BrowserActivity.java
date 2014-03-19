@@ -1,12 +1,12 @@
 
 package com.iac.dlnaproject.activity;
 
-import com.iac.dlnaproject.BrowseResult;
 import com.iac.dlnaproject.ControllerProxy;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.fragment.MediaContentFragment;
 import com.iac.dlnaproject.fragment.MediaRendererFragment;
 import com.iac.dlnaproject.fragment.MediaServerFragment;
+import com.iac.dlnaproject.loader.BrowseResult;
 import com.iac.dlnaproject.model.UIEvent;
 import com.iac.dlnaproject.model.UIEventHelper;
 import com.iac.dlnaproject.nowplay.PlayQueueFragment;

@@ -63,6 +63,10 @@ public class MediaItem implements Item {
 
     private Node node;
 
+    public MediaItem() {
+
+    }
+
     public MediaItem(JSONObject jsonObject) {
 
     }

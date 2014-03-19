@@ -1,27 +1,21 @@
 
 package com.iac.dlnaproject.fragment;
 
-import com.iac.dlnaproject.BrowseResult;
-import com.iac.dlnaproject.BrowseTask;
-import com.iac.dlnaproject.BrowseTask.BrowseCallback;
-import com.iac.dlnaproject.BrowseTask.BrowseParams;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.adapter.ContentAdapter;
+import com.iac.dlnaproject.loader.BrowseParams;
+import com.iac.dlnaproject.loader.BrowseResult;
+import com.iac.dlnaproject.loader.MediaContentLoader;
 import com.iac.dlnaproject.model.UIEvent;
 import com.iac.dlnaproject.model.UIEventHelper;
 import com.iac.dlnaproject.nowplay.ContainerItem;
 import com.iac.dlnaproject.nowplay.Item;
 import com.iac.dlnaproject.nowplay.MediaItem;
-import com.iac.dlnaproject.nowplay.MediaItem.ResInfo;
-import com.iac.dlnaproject.provider.MediaItemMetaData;
-import com.iac.dlnaproject.provider.MediaItemMetaData.ResMetaData;
-import com.iac.dlnaproject.provider.PlayQueueMetaData;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,8 +26,7 @@ import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MediaContentFragment extends RefreshableBaseFragment implements OnItemClickListener,
-BrowseCallback {
+public class MediaContentFragment extends RefreshableBaseFragment implements OnItemClickListener, LoaderCallbacks<BrowseResult> {
 
     private ContentAdapter mBrowseAdapter;
     private View mContentView;
@@ -41,7 +34,6 @@ BrowseCallback {
 
     private List<Item> browseList;
     private BrowseParams mBrowseParams;
-    private BrowseTask mBrowseTask;
 
     public static Fragment getInstance(Bundle args) {
         Fragment fragment = new MediaContentFragment();
@@ -81,7 +73,10 @@ BrowseCallback {
 
     @Override
     public void onDestroyView() {
-        mBrowseTask.cancel(true);
+        Loader loader = getLoaderManager().getLoader(0);
+        if (loader != null) {
+            loader.stopLoading();
+        }
         super.onDestroyView();
     }
 
@@ -89,9 +84,14 @@ BrowseCallback {
     public void obtainData() {
         // Hide the list
         setContentShown(false);
-        mBrowseTask = new BrowseTask();
-        mBrowseTask.setCallback(this);
-        mBrowseTask.execute(getBrowseParams());
+        Loader loader = getLoaderManager().getLoader(0);
+        if (loader == null) {
+            getLoaderManager().initLoader(0, null, this);
+        } else {
+            loader.reset();
+            ((MediaContentLoader)loader).setParameters(getBrowseParams());
+            loader.startLoading();
+        }
     }
 
     @Override
@@ -108,15 +108,6 @@ BrowseCallback {
             setContentEmpty(true);
             mBrowseAdapter.refreshData(browseList);
         }
-    }
-
-    @Override
-    public void onGetItems(BrowseResult result) {
-        browseList = new ArrayList<Item>();
-        if (result.getResult() != null) {
-            browseList.addAll(result.getResult());
-        }
-        updateView();
     }
 
     @Override
@@ -148,34 +139,68 @@ BrowseCallback {
             message.setObject(item);
             send(message);
 
-            ContentResolver r = getActivity().getContentResolver();
-
-            MediaItem mediaItem = (MediaItem)item;
-            ContentValues cv = new ContentValues();
-            cv.put(MediaItemMetaData.ALBUM, mediaItem.getAlbum());
-            cv.put(MediaItemMetaData.ALBUM_ART_URI, mediaItem.getAlbumarturi());
-            cv.put(MediaItemMetaData.OBJECT_CLASS, mediaItem.getObjectClass());
-            cv.put(MediaItemMetaData.OBJECT_ID, mediaItem.getId());
-            cv.put(MediaItemMetaData.ARTIST, mediaItem.getArtist());
-            cv.put(MediaItemMetaData.PARENT_ID, mediaItem.getParentId());
-            cv.put(MediaItemMetaData.RESTRICTED, mediaItem.getRestricted());
-            cv.put(MediaItemMetaData.DATE, mediaItem.getDate());
-            cv.put(MediaItemMetaData.TITLE, mediaItem.getTitle());
-            Uri mediaItemUri = r.insert(MediaItemMetaData.CONTENT_URI, cv);
-            cv.clear();
-            ResInfo res = mediaItem.getRes();
-            String mediaId = mediaItemUri.getPathSegments().get(1);
-            cv.put(ResMetaData.RES, res.res);
-            cv.put(ResMetaData.MEDIA_ID, mediaId);
-            cv.put(ResMetaData.PROTOCOL_INFO, res.protocolInfo);
-            cv.put(ResMetaData.RESOLUTION, res.resolution);
-            cv.put(ResMetaData.SIZE, res.size);
-            cv.put(ResMetaData.DURATION, res.duration);
-            cv.clear();
-
-            cv.put(PlayQueueMetaData.ITEM_ID, mediaId);
-            r.insert(PlayQueueMetaData.CONTENT_URI, cv);
+            // ContentResolver r = getActivity().getContentResolver();
+            //
+            // MediaItem mediaItem = (MediaItem)item;
+            // ContentValues cv = new ContentValues();
+            // cv.put(MediaItemMetaData.ALBUM, mediaItem.getAlbum());
+            // cv.put(MediaItemMetaData.ALBUM_ART_URI,
+            // mediaItem.getAlbumarturi());
+            // cv.put(MediaItemMetaData.OBJECT_CLASS,
+            // mediaItem.getObjectClass());
+            // cv.put(MediaItemMetaData.OBJECT_ID, mediaItem.getId());
+            // cv.put(MediaItemMetaData.ARTIST, mediaItem.getArtist());
+            // cv.put(MediaItemMetaData.PARENT_ID, mediaItem.getParentId());
+            // cv.put(MediaItemMetaData.RESTRICTED, mediaItem.getRestricted());
+            // cv.put(MediaItemMetaData.DATE, mediaItem.getDate());
+            // cv.put(MediaItemMetaData.TITLE, mediaItem.getTitle());
+            // Uri mediaItemUri = r.insert(MediaItemMetaData.CONTENT_URI, cv);
+            // cv.clear();
+            // ResInfo res = mediaItem.getRes();
+            // String mediaId = mediaItemUri.getPathSegments().get(1);
+            // cv.put(ResMetaData.RES, res.res);
+            // cv.put(ResMetaData.MEDIA_ID, mediaId);
+            // cv.put(ResMetaData.PROTOCOL_INFO, res.protocolInfo);
+            // cv.put(ResMetaData.RESOLUTION, res.resolution);
+            // cv.put(ResMetaData.SIZE, res.size);
+            // cv.put(ResMetaData.DURATION, res.duration);
+            // cv.clear();
+            //
+            // cv.put(PlayQueueMetaData.ITEM_ID, mediaId);
+            //
+            // String[] cols = new String[] {
+            // "count(*)"
+            // };
+            // Uri uri = PlayQueueMetaData.CONTENT_URI;
+            // Cursor cur = r.query(uri, cols, null, null, null);
+            // cur.moveToFirst();
+            // int count = cur.getInt(0);
+            // cur.close();
+            // cv.put(PlayQueueMetaData.PLAYER_ORDER, count);
+            //
+            // r.insert(PlayQueueMetaData.CONTENT_URI, cv);
         }
+    }
+
+    @Override
+    public Loader<BrowseResult> onCreateLoader(int id, Bundle args) {
+        MediaContentLoader loader = new MediaContentLoader(getActivity());
+        loader.setParameters(getBrowseParams());
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<BrowseResult> loader, BrowseResult data) {
+        browseList = new ArrayList<Item>();
+        if (data.getResult() != null) {
+            browseList.addAll(data.getResult());
+        }
+        updateView();
+    }
+
+    @Override
+    public void onLoaderReset(Loader<BrowseResult> data) {
+        browseList = new ArrayList<Item>();
     }
 
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="row_icon" />
+    <item type="id" name="row_icon_action_1" />
+    <item type="id" name="row_icon_action_2" />
+</resources>

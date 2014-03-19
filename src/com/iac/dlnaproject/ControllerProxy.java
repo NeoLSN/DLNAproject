@@ -1,8 +1,9 @@
 
 package com.iac.dlnaproject;
 
-import com.iac.dlnaproject.BrowseTask.BrowseParams;
 import com.iac.dlnaproject.NetworkStatusReceiver.OnNetworkChangedListener;
+import com.iac.dlnaproject.loader.BrowseParams;
+import com.iac.dlnaproject.loader.BrowseResult;
 import com.iac.dlnaproject.nowplay.Item;
 import com.iac.dlnaproject.patterns.Observable;
 import com.iac.dlnaproject.patterns.Observer;

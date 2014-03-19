@@ -39,7 +39,7 @@ public abstract class BaseAdapterWithViewHolder<T> extends ArrayAdapter<T> {
 
         ItemViewHolder viewHolder = null;
         if (convertView == null) {
-            convertView = mInflater.inflate(R.layout.row, null);
+            convertView = mInflater.inflate(R.layout.row, parent, false);
             viewHolder = new ItemViewHolder();
             viewHolder.iconImage = (ImageView)convertView.findViewById(R.id.row_icon);
             viewHolder.itemTitle = (TextView)convertView.findViewById(R.id.row_title);
