@@ -9,10 +9,13 @@ import org.cybergarage.xml.Attribute;
 import org.cybergarage.xml.Node;
 import org.json.JSONObject;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class MediaItem implements Item {
+public class MediaItem implements Item, Parcelable {
     public final static String DLNA_OBJECTCLASS_MUSICID = "object.item.audioItem";
     public final static String DLNA_OBJECTCLASS_VIDEOID = "object.item.videoItem";
     public final static String DLNA_OBJECTCLASS_PHOTOID = "object.item.imageItem";
@@ -41,12 +44,54 @@ public class MediaItem implements Item {
         return false;
     }
 
-    public static class ResInfo {
-        public String protocolInfo = "";
-        public String resolution = "";
-        public long size = 0;
-        public String res = "";
-        public int duration = 0;
+    public static class ResInfo implements Parcelable {
+        public String protocolInfo;
+        public String resolution;
+        public long size;
+        public String res;
+        public int duration;
+
+        public ResInfo() {
+            protocolInfo = "";
+            resolution = "";
+            size = 0;
+            res = "";
+            duration = 0;
+        }
+
+        public ResInfo(Parcel in) {
+            protocolInfo = in.readString();
+            resolution = in.readString();
+            size = in.readLong();
+            res = in.readString();
+            duration = in.readInt();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(protocolInfo);
+            dest.writeString(resolution);
+            dest.writeLong(size);
+            dest.writeString(res);
+            dest.writeInt(duration);
+        }
+
+        public static final Parcelable.Creator<ResInfo> CREATOR = new Parcelable.Creator<ResInfo>() {
+            @Override
+            public ResInfo createFromParcel(Parcel in) {
+                return new ResInfo(in);
+            }
+
+            @Override
+            public ResInfo[] newArray(int size) {
+                return new ResInfo[size];
+            }
+        };
     }
 
     private String parentId = "";
@@ -56,7 +101,7 @@ public class MediaItem implements Item {
     private String album = "";
     private String objectClass = "";
     private String albumArtUri = "";
-    //private long date = 0;
+    // private long date = 0;
     private String date = "";
     private String restricted = "";
     private ResInfo res = null;
@@ -117,6 +162,19 @@ public class MediaItem implements Item {
         }
     }
 
+    private MediaItem(Parcel in) {
+        id = in.readString();
+        title = in.readString();
+        artist= in.readString();
+        album= in.readString();
+        albumArtUri= in.readString();
+        objectClass= in.readString();
+        date= in.readString();
+        parentId= in.readString();
+        restricted = in.readString();
+        res = in.readParcelable(ResInfo.class.getClassLoader());
+    }
+
     private ResInfo getResInfo(Node node) {
         if (node == null || !node.getName().equals(DIDLLite.RES)) {
             return null;
@@ -161,7 +219,7 @@ public class MediaItem implements Item {
 
     private MediaItem.ResInfo getBestResInfo(List<MediaItem.ResInfo> resList) {
 
-        if (objectClass == null || resList == null || resList.size() == 0){
+        if (objectClass == null || resList == null || resList.size() == 0) {
             return null;
         }
 
@@ -171,9 +229,10 @@ public class MediaItem implements Item {
 
         int maxIndex = 0;
         int size = resList.size();
-        for(int i = 1; i < size; i++){
-            boolean ret = compareBetweenResolution(resList.get(maxIndex).resolution, resList.get(i).resolution);
-            if (!ret){
+        for (int i = 1; i < size; i++) {
+            boolean ret = compareBetweenResolution(resList.get(maxIndex).resolution,
+                    resList.get(i).resolution);
+            if (!ret) {
                 maxIndex = i;
             }
         }
@@ -181,7 +240,7 @@ public class MediaItem implements Item {
         return resList.get(maxIndex);
     }
 
-    private boolean compareBetweenResolution(String resolution1, String resolution2){
+    private boolean compareBetweenResolution(String resolution1, String resolution2) {
 
         int resolutionInt1 = formatResolution(resolution1);
         int resolutionInt2 = formatResolution(resolution2);
@@ -189,9 +248,9 @@ public class MediaItem implements Item {
         return resolutionInt1 >= resolutionInt2 ? true : false;
     }
 
-    private int formatResolution(String resolutionString){
+    private int formatResolution(String resolutionString) {
         int value = 0;
-        if(resolutionString == null || resolutionString.length() == 0){
+        if (resolutionString == null || resolutionString.length() == 0) {
             return value;
         }
 
@@ -304,4 +363,35 @@ public class MediaItem implements Item {
     public Node getNode() {
         return node;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(id);
+        out.writeString(title);
+        out.writeString(artist);
+        out.writeString(album);
+        out.writeString(albumArtUri);
+        out.writeString(objectClass);
+        out.writeString(date);
+        out.writeString(parentId);
+        out.writeString(restricted);
+        out.writeParcelable(getRes(), 0);
+    }
+
+    public static final Parcelable.Creator<MediaItem> CREATOR = new Parcelable.Creator<MediaItem>() {
+        @Override
+        public MediaItem createFromParcel(Parcel in) {
+            return new MediaItem(in);
+        }
+
+        @Override
+        public MediaItem[] newArray(int size) {
+            return new MediaItem[size];
+        }
+    };
 }

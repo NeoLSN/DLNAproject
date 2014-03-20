@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -107,12 +106,6 @@ public class MediaServerFragment extends RefreshableBaseFragment implements OnIt
     }
 
     @Override
-    public void receive(UIEvent message) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public void update(Observable observable) {
         mHandler.removeMessages(0);
         mHandler.sendEmptyMessageDelayed(0, 200);
@@ -122,7 +115,6 @@ public class MediaServerFragment extends RefreshableBaseFragment implements OnIt
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Device d = (Device)parent.getItemAtPosition(position);
         mCtrlProxy.setSelectedServer(d);
-        Log.i("Jason", d.getFriendlyName() + " => " + d.getUDN());
         UIEvent message = UIEvent.create(UIEvent.TYPE_ITEM_SELECTED_AND_COMPLETED);
         send(message);
     }

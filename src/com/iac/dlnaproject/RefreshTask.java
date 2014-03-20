@@ -9,6 +9,7 @@ public abstract class RefreshTask extends Thread {
 
     private Context mContext;
     private boolean mIsExit = false;
+    private int refreshInterval = REFRESH_DEVICES_INTERVAL;
 
     public RefreshTask(Context context) {
         mContext = context;
@@ -46,7 +47,7 @@ public abstract class RefreshTask extends Thread {
 
             synchronized (this) {
                 try {
-                    wait(REFRESH_DEVICES_INTERVAL);
+                    wait(refreshInterval);
                 } catch (InterruptedException e) {}
             }
         }
@@ -61,4 +62,8 @@ public abstract class RefreshTask extends Thread {
 
     protected abstract void onRefresh();
     protected abstract void onStop();
+
+    protected void setRefreshInterval(int refreshInterval) {
+        this.refreshInterval = refreshInterval;
+    }
 }

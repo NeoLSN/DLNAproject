@@ -70,9 +70,4 @@ public class HomeMenuFragment extends BaseFragment implements OnItemClickListene
         send(message);
     }
 
-    @Override
-    public void receive(UIEvent message) {
-
-    }
-
 }

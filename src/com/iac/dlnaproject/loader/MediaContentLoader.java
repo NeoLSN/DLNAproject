@@ -5,7 +5,6 @@ import com.iac.dlnaproject.ControllerProxy;
 
 import android.content.Context;
 import android.support.v4.content.AsyncTaskLoader;
-import android.util.Log;
 
 public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
 
@@ -22,15 +21,12 @@ public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
 
     @Override
     public BrowseResult loadInBackground() {
-        Log.i("Jason", "loadInBackground");
         if (param == null)
             param = new BrowseParams();
         BrowseResult result = new BrowseResult(param, null);
         try {
             ControllerProxy ctrlProxy = ControllerProxy.getInstance();
-
             result = ctrlProxy.getContentDirectory(param);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -40,7 +36,6 @@ public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
 
     @Override
     protected void onStartLoading() {
-
         if (takeContentChanged() || result == null) {
             forceLoad();
         }
@@ -55,7 +50,7 @@ public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
         }
         result = data;
 
-        if (isStarted()) {
+        if (isStarted() && !isAbandoned()) {
             super.deliverResult(data);
         }
 

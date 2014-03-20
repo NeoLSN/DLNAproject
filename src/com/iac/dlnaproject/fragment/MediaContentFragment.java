@@ -26,7 +26,8 @@ import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MediaContentFragment extends RefreshableBaseFragment implements OnItemClickListener, LoaderCallbacks<BrowseResult> {
+public class MediaContentFragment extends RefreshableBaseFragment implements OnItemClickListener,
+LoaderCallbacks<BrowseResult> {
 
     private ContentAdapter mBrowseAdapter;
     private View mContentView;

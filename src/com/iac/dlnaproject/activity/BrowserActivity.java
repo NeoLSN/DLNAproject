@@ -10,12 +10,12 @@ import com.iac.dlnaproject.loader.BrowseResult;
 import com.iac.dlnaproject.model.UIEvent;
 import com.iac.dlnaproject.model.UIEventHelper;
 import com.iac.dlnaproject.nowplay.PlayQueueFragment;
-import com.viewpagerindicator.IconPagerAdapter;
 import com.viewpagerindicator.PageIndicator;
 import com.viewpagerindicator.TitlePageIndicator;
 import com.viewpagerindicator.TitlePageIndicator.IndicatorStyle;
 
 import android.os.Bundle;
+import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -128,11 +128,11 @@ public class BrowserActivity extends FunctionBaseActivity {
         }
     }
 
-    private static final String[] CONTENT = new String[] {
-        "Recent", "Artists"
-    };
+    public static class ViewAdapter extends FragmentPagerAdapter {
+        private static final String[] CONTENT = new String[] {
+            "Local", "Other"
+        };
 
-    public static class ViewAdapter extends FragmentPagerAdapter implements IconPagerAdapter {
         public ViewAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
         }
@@ -159,9 +159,16 @@ public class BrowserActivity extends FunctionBaseActivity {
             return CONTENT[position % CONTENT.length].toUpperCase();
         }
 
-        @Override
-        public int getIconResId(int index) {
-            return 0;
+    }
+
+    @Override
+    protected boolean onHandleMessage(Message msg) {
+        switch (msg.what) {
+            case MSG_UPDATE_VIEW:
+                receive((UIEvent)msg.obj);
+                return true;
+            default:
+                return false;
         }
     }
 }

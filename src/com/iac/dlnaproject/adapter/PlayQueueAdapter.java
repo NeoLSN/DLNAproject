@@ -15,9 +15,9 @@ import android.view.ViewGroup;
 
 import java.util.List;
 
-public class PlayQueueAdapter extends BaseAdapterWithViewHolder<Item> {
+public class PlayQueueAdapter extends BaseAdapterWithViewHolder<MediaItem> {
 
-    private List<Item> contentItem;
+    private List<MediaItem> contentItem;
     private LayoutInflater mInflater;
     private Context mContext;
 
@@ -26,12 +26,12 @@ public class PlayQueueAdapter extends BaseAdapterWithViewHolder<Item> {
     private Drawable picIcon;
     private Drawable videoIcon;
 
-    public PlayQueueAdapter(Context context, List<Item> contentItem) {
+    public PlayQueueAdapter(Context context, List<MediaItem> contentItem) {
         super(context, contentItem);
 
         Resources res = context.getResources();
         folderIcon = res.getDrawable(R.drawable.ic_action_collection);
-        musicIcon = res.getDrawable(R.drawable.ic_media_audio);
+        musicIcon = res.getDrawable(R.drawable.icon_schedule_mark);
         // picIcon = res.getDrawable(R.drawable.tab_icon_pic);
         // videoIcon = res.getDrawable(R.drawable.tab_icon_video);
     }
@@ -44,7 +44,7 @@ public class PlayQueueAdapter extends BaseAdapterWithViewHolder<Item> {
         if (dataItem instanceof ContainerItem) {
             viewHolder.iconImage.setImageResource(R.drawable.ic_action_computer);
         } else if (dataItem instanceof MediaItem) {
-            viewHolder.iconImage.setImageResource(R.drawable.ic_media_audio);
+            viewHolder.iconImage.setImageResource(R.drawable.icon_schedule_mark);
         }
         viewHolder.itemActionImage1.setOnClickListener(null);
     }

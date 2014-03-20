@@ -2,7 +2,6 @@
 package com.iac.dlnaproject.fragment;
 
 import com.iac.dlnaproject.R;
-import com.iac.dlnaproject.model.UIEvent;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -34,12 +33,6 @@ public class FeedsFragment extends BaseFragment {
         // same as restoreInstanceState on activity
         super.onActivityCreated(savedInstanceState);
         setContentShown(true);
-    }
-
-    @Override
-    public void receive(UIEvent message) {
-        // TODO Auto-generated method stub
-
     }
 
 }

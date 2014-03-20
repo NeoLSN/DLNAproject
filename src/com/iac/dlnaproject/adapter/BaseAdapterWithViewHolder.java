@@ -25,7 +25,7 @@ public abstract class BaseAdapterWithViewHolder<T> extends ArrayAdapter<T> {
     }
 
     public void refreshData(List<T> contentItem) {
-        if (!contentItems.equals(contentItem)) {
+        if (contentItems != null && !contentItems.equals(contentItem)) {
             clear();
             for (T item : contentItem) {
                 this.add(item);

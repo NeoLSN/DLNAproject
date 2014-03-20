@@ -2,10 +2,9 @@
 package com.iac.dlnaproject.fragment;
 
 import com.devspark.progressfragment.ProgressFragment;
-import com.iac.dlnaproject.DLNAapp;
+import com.iac.dlnaproject.MediaPlayingMonitorService;
 import com.iac.dlnaproject.R;
-import com.iac.dlnaproject.model.ActivityModel;
-import com.iac.dlnaproject.model.Participant;
+import com.iac.dlnaproject.activity.FunctionBaseActivity;
 import com.iac.dlnaproject.model.UIEvent;
 
 import uk.co.senab.actionbarpulltorefresh.library.ActionBarPullToRefresh;
@@ -15,7 +14,10 @@ import uk.co.senab.actionbarpulltorefresh.library.listeners.OnRefreshListener;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,29 +26,42 @@ import android.view.View;
 import android.view.ViewGroup;
 
 public abstract class RefreshableBaseFragment extends ProgressFragment implements
-OnRefreshListener, Participant {
+OnRefreshListener {
 
-    private ActivityModel mActivityActionModel;
+    private PullToRefreshLayout mPullToRefreshLayout;
+
+    private Messenger hostManager;
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     @Override
     public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        if (activity instanceof Host) {
+        if (activity instanceof FunctionBaseActivity) {
+            hostManager = new Messenger(((FunctionBaseActivity)activity).getBinder());
             try {
-                setActivityActionModel(((Host)activity).getActivityActionModel());
-            } catch (ClassCastException e) {
-                Log.i(DLNAapp.TAG, activity.toString() + " must implement Participant.Host");
+                Message msg = Message.obtain(null,
+                        FunctionBaseActivity.MSG_REGISTER_CLIENT);
+                msg.replyTo = mMessenger;
+                hostManager.send(msg);
+            } catch (RemoteException e) {
+
             }
         }
+        super.onAttach(activity);
     }
 
     @Override
     public void onDetach() {
+        if (hostManager != null) {
+            try {
+                Message msg = Message.obtain(null,
+                        MediaPlayingMonitorService.MSG_UNREGISTER_CLIENT);
+                msg.replyTo = mMessenger;
+                hostManager.send(msg);
+            } catch (RemoteException e) {
+            }
+        }
         super.onDetach();
-        setActivityActionModel(null);
     }
-
-    private PullToRefreshLayout mPullToRefreshLayout;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -99,18 +114,14 @@ OnRefreshListener, Participant {
     public abstract void obtainData();
 
     public final void updateView() {
-        onUpdateView();
-        // Notify PullToRefreshLayout that the refresh has finished
-        mPullToRefreshLayout.setRefreshComplete();
-        setContentShown(true);
+        if (getView() != null) {
+            onUpdateView();
+            mPullToRefreshLayout.setRefreshComplete();
+            setContentShown(true);
+        }
     }
 
-    public abstract void onUpdateView();
-
-    @Override
-    public void send(UIEvent message) {
-        getActivityActionModel().send(this, message);
-    }
+    protected abstract void onUpdateView();
 
     @Override
     public void onRefreshStarted(View view) {
@@ -118,18 +129,38 @@ OnRefreshListener, Participant {
         obtainData();
     }
 
-    public ActivityModel getActivityActionModel() {
-        return mActivityActionModel;
+    protected boolean onHandleMessage(Message msg) {
+        //update now playing bar
+        switch (msg.what) {
+            default:
+                return false;
+        }
     }
 
-    private void setActivityActionModel(ActivityModel model) {
-        if (mActivityActionModel != null) {
-            mActivityActionModel.Unregister(this);
-            mActivityActionModel = null;
+    protected void send(UIEvent event) {
+        try {
+            Message msg = Message.obtain(null,
+                    FunctionBaseActivity.MSG_UPDATE_VIEW, 0, 0, event);
+            hostManager.send(msg);
+        } catch (RemoteException e) {
         }
-        if (model != null) {
-            mActivityActionModel = model;
-            mActivityActionModel.Register(this);
+    }
+
+    protected void receive(UIEvent message) {}
+
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case FunctionBaseActivity.MSG_UPDATE_VIEW:
+                    if (msg.obj != null) {
+                        if (msg.obj instanceof UIEvent)
+                            receive((UIEvent)msg.obj);
+                    }
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
         }
     }
 

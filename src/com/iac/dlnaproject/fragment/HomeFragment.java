@@ -4,7 +4,6 @@ package com.iac.dlnaproject.fragment;
 import com.iac.dlnaproject.ControllerProxy;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.activity.BrowserActivity;
-import com.iac.dlnaproject.model.UIEvent;
 import com.iac.dlnaproject.patterns.Observable;
 import com.iac.dlnaproject.patterns.Observer;
 
@@ -109,12 +108,6 @@ public class HomeFragment extends BaseFragment implements Observer {
         } else {
             mediaBtn.setEnabled(false);
         }
-    }
-
-    @Override
-    public void receive(UIEvent message) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

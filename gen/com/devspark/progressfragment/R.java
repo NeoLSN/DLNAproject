@@ -8,16 +8,16 @@ package com.devspark.progressfragment;
 
 public final class R {
 	public static final class id {
-		public static final int content_container = 0x7f06005e;
-		public static final int grid = 0x7f060061;
-		public static final int grid_container = 0x7f060060;
-		public static final int list_container = 0x7f060062;
+		public static final int content_container = 0x7f06005f;
+		public static final int grid = 0x7f06006d;
+		public static final int grid_container = 0x7f06006c;
+		public static final int list_container = 0x7f06006e;
 		public static final int progress_container = 0x7f060057;
 		public static final int progress_text = 0x7f060058;
 	}
 	public static final class layout {
-		public static final int fragment_progress = 0x7f03001f;
-		public static final int fragment_progress_grid = 0x7f030020;
-		public static final int fragment_progress_list = 0x7f030021;
+		public static final int fragment_progress = 0x7f030020;
+		public static final int fragment_progress_grid = 0x7f030021;
+		public static final int fragment_progress_list = 0x7f030022;
 	}
 }

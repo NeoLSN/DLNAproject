@@ -114,8 +114,7 @@ public class IACMediaController extends ControlPoint
         browseAction.setBrowseFlag(browseFlag);
         browseAction.setStartingIndex(startIndex);
         browseAction.setRequestedCount(requestedCount);
-        //browseAction.setFilter(filter);
-        browseAction.setFilter("");
+        browseAction.setFilter(filter);
         browseAction.setSortCriteria(sortCaiteria);
         if (browseAction.postControlAction() == false)
             return null;

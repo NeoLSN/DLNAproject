@@ -28,7 +28,7 @@ public class MenuAdapter extends BaseAdapterWithViewHolder<String> {
 
         Resources res = context.getResources();
         folderIcon = res.getDrawable(R.drawable.ic_action_collection);
-        musicIcon = res.getDrawable(R.drawable.ic_media_audio);
+        musicIcon = res.getDrawable(R.drawable.icon_schedule_mark);
         // picIcon = res.getDrawable(R.drawable.tab_icon_pic);
         // videoIcon = res.getDrawable(R.drawable.tab_icon_video);
     }

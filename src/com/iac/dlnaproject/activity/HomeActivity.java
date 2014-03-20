@@ -16,7 +16,7 @@ import android.view.View;
 
 public class HomeActivity extends FunctionBaseActivity {
 
-    protected Fragment mFrag;
+    private Fragment mFrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +36,8 @@ public class HomeActivity extends FunctionBaseActivity {
 
     @Override
     protected void onDestroy() {
-        stopService(new Intent(DLNAapp.getApplication(),
-                MediaControllerService.class));
+        // stopService(new Intent(DLNAapp.getApplication(),
+        // MediaControllerService.class));
         super.onDestroy();
     }
 

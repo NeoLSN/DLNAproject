@@ -24,5 +24,9 @@
     <string name="source">Media Source</string>
     <string name="renderer">Media Renderer</string>
     <string name="media_content">Media Content</string>
+    <string name="title_activity_now_playing">NowPlaying</string>
+    <string name="unknown_artist">&lt;Unknown Artist&gt;</string>
+    <string name="unknown_music">&lt;Unknown Music&gt;</string>
+    <string name="play_queue">Play Queue</string>
 
 </resources>
