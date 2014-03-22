@@ -28,8 +28,8 @@ import java.util.List;
 public class MediaRendererFragment extends RefreshableBaseFragment implements OnItemClickListener, Observer {
 
     private DeviceAdapter mDeviceAdapter;
-    private View mContentView;
     private ListView mListView;
+    private View mEmptyView;
 
     private ControllerProxy mCtrlProxy;
 
@@ -50,24 +50,25 @@ public class MediaRendererFragment extends RefreshableBaseFragment implements On
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.list, null);
-        mListView = (ListView)mContentView.findViewById(R.id.browse_list);
+        View contentView = inflater.inflate(R.layout.list, container, false);
+        mListView = (ListView)contentView.findViewById(R.id.browse_list);
         mListView.setOnItemClickListener(this);
-        return super.onCreateView(inflater, container, savedInstanceState);
+        mEmptyView = inflater.inflate(R.layout.empty_view, null);
+        return contentView;
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        setContentView(mContentView);
-        mListView.setEmptyView(view.findViewById(R.id.empty_area));
+        ((ViewGroup)mListView.getParent()).addView(mEmptyView);
+        mListView.setEmptyView(mEmptyView);
         super.onViewCreated(view, savedInstanceState);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
         mCtrlProxy = ControllerProxy.getInstance();
         mCtrlProxy.attach(this);
+        super.onActivityCreated(savedInstanceState);
     }
 
     @Override
@@ -79,10 +80,8 @@ public class MediaRendererFragment extends RefreshableBaseFragment implements On
 
     @Override
     public void obtainData() {
-        setContentShown(false);
         mHandler.removeMessages(0);
         getActivity().startService(new Intent(MediaControllerService.RESET_SEARCH_DEVICES));
-        //最久讓畫面刷個兩秒
         mHandler.sendEmptyMessageDelayed(0, 2000);
     }
 
@@ -97,9 +96,8 @@ public class MediaRendererFragment extends RefreshableBaseFragment implements On
             } else {
                 mDeviceAdapter.refreshData(browseList);
             }
-            setContentEmpty(false);
+
         } else {
-            setContentEmpty(true);
             if (mDeviceAdapter != null)
                 mDeviceAdapter.refreshData(browseList);
         }

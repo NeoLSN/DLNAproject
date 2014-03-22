@@ -23,8 +23,6 @@ import java.util.List;
 
 public class PlayQueueFragment extends BaseFragment implements OnItemClickListener {
 
-    private View mContentView;
-
     private DragSortListView mQueueList;
     private DragSortController mController;
     private PlayQueueAdapter mBrowseAdapter;
@@ -46,8 +44,8 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.content_play_queue, null);
-        mQueueList = (DragSortListView)mContentView.findViewById(R.id.queue_list);
+        View contentView = inflater.inflate(R.layout.content_play_queue, container, false);
+        mQueueList = (DragSortListView)contentView.findViewById(R.id.queue_list);
         mQueueList.setDropListener(onDrop);
         mQueueList.setRemoveListener(onRemove);
 
@@ -60,20 +58,21 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
         mQueueList.setOnTouchListener(mController);
         mQueueList.setDragEnabled(true);
 
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return contentView;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        ((ViewGroup)mQueueList.getParent()).addView(mEmptyView);
+        mQueueList.setEmptyView(mEmptyView);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        mQueueList.setEmptyView(mEmptyView);
-        ((ViewGroup)mContentView).addView(mEmptyView);
-        // Setup content view
-        setContentView(mContentView);
-
         // same as restoreInstanceState on activity
         super.onActivityCreated(savedInstanceState);
         updateQueueData();
-        setContentShown(true);
     }
 
     public void updateQueueData() {

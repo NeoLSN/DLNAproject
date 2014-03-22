@@ -1,22 +1,17 @@
 
 package com.iac.dlnaproject.fragment;
 
-import com.devspark.progressfragment.ProgressFragment;
-import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.activity.FunctionBaseActivity;
 import com.iac.dlnaproject.model.UIEvent;
 
 import android.app.Activity;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.support.v4.app.Fragment;
 
-public abstract class BaseFragment extends ProgressFragment {
+public abstract class BaseFragment extends Fragment {
 
     private Messenger hostManager;
     private final Messenger mMessenger = new Messenger(new IncomingHandler());
@@ -49,11 +44,6 @@ public abstract class BaseFragment extends ProgressFragment {
             }
         }
         super.onDetach();
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_custom_progress, container, false);
     }
 
     protected void send(UIEvent event) {

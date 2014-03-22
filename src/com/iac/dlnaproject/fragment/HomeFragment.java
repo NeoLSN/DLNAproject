@@ -34,19 +34,16 @@ public class HomeFragment extends BaseFragment implements Observer {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.content_home, null);
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return inflater.inflate(R.layout.content_home, container, false);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         mCtrlProxy = ControllerProxy.getInstance();
         mCtrlProxy.attach(this);
-        // Setup content view
-        setContentView(mContentView);
+
         initMainButtons();
         super.onActivityCreated(savedInstanceState);
-        setContentShown(true);
     }
 
     @Override
@@ -62,7 +59,7 @@ public class HomeFragment extends BaseFragment implements Observer {
     }
 
     private void initMainButtons() {
-        sourceBtn = (TextView)mContentView.findViewById(R.id.source_browse_button);
+        sourceBtn = (TextView)getView().findViewById(R.id.source_browse_button);
         sourceBtn.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -73,7 +70,7 @@ public class HomeFragment extends BaseFragment implements Observer {
             }
 
         });
-        sinkBtn = (TextView)mContentView.findViewById(R.id.sink_browse_button);
+        sinkBtn = (TextView)getView().findViewById(R.id.sink_browse_button);
         sinkBtn.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -84,7 +81,7 @@ public class HomeFragment extends BaseFragment implements Observer {
             }
 
         });
-        mediaBtn = (TextView)mContentView.findViewById(R.id.media_browse_button);
+        mediaBtn = (TextView)getView().findViewById(R.id.media_browse_button);
         mediaBtn.setOnClickListener(new OnClickListener() {
 
             @Override

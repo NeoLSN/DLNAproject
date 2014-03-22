@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class HomeMenuFragment extends BaseFragment implements OnItemClickListener {
-    private View mContentView;
+
     private ListView mMenuListView;
     private String[] MENU_ITEMS;
 
@@ -33,19 +33,16 @@ public class HomeMenuFragment extends BaseFragment implements OnItemClickListene
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.menu_home_left, null);
-        mMenuListView = (ListView)mContentView.findViewById(R.id.drawer_menu);
-        return super.onCreateView(inflater, container, savedInstanceState);
+        View contentView = inflater.inflate(R.layout.menu_home_left, null);
+        mMenuListView = (ListView)contentView.findViewById(R.id.drawer_menu);
+        return contentView;
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        // Setup content view
-        setContentView(mContentView);
         // same as restoreInstanceState on activity
         super.onActivityCreated(savedInstanceState);
         setDrawerMenu();
-        setContentShown(true);
     }
 
     private void setDrawerMenu() {

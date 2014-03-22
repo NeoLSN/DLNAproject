@@ -30,7 +30,6 @@ public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return result;
     }
 
@@ -50,7 +49,7 @@ public class MediaContentLoader extends AsyncTaskLoader<BrowseResult> {
         }
         result = data;
 
-        if (isStarted() && !isAbandoned()) {
+        if (isStarted()) {
             super.deliverResult(data);
         }
 

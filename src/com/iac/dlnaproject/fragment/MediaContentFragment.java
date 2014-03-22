@@ -30,8 +30,8 @@ public class MediaContentFragment extends RefreshableBaseFragment implements OnI
 LoaderCallbacks<BrowseResult> {
 
     private ContentAdapter mBrowseAdapter;
-    private View mContentView;
     private ListView mListView;
+    private View mEmptyView;
 
     private List<Item> browseList;
     private BrowseParams mBrowseParams;
@@ -59,17 +59,21 @@ LoaderCallbacks<BrowseResult> {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.list, null);
-        mListView = (ListView)mContentView.findViewById(R.id.browse_list);
+        View contentView = inflater.inflate(R.layout.list, container, false);
+        mListView = (ListView)contentView.findViewById(R.id.browse_list);
         mListView.setOnItemClickListener(this);
-        return super.onCreateView(inflater, container, savedInstanceState);
+        mEmptyView = inflater.inflate(R.layout.empty_view, null);
+        return contentView;
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        setContentView(mContentView);
-        mListView.setEmptyView(view.findViewById(R.id.empty_area));
+        ((ViewGroup)mListView.getParent()).addView(mEmptyView);
+        mListView.setEmptyView(mEmptyView);
         super.onViewCreated(view, savedInstanceState);
+        browseList = new ArrayList<Item>();
+        mBrowseAdapter = new ContentAdapter(getActivity(), browseList);
+        mListView.setAdapter(mBrowseAdapter);
     }
 
     @Override
@@ -83,8 +87,6 @@ LoaderCallbacks<BrowseResult> {
 
     @Override
     public void obtainData() {
-        // Hide the list
-        setContentShown(false);
         Loader loader = getLoaderManager().getLoader(0);
         if (loader == null) {
             getLoaderManager().initLoader(0, null, this);
@@ -97,18 +99,7 @@ LoaderCallbacks<BrowseResult> {
 
     @Override
     public void onUpdateView() {
-        if (!browseList.isEmpty()) {
-            if (mBrowseAdapter == null) {
-                mBrowseAdapter = new ContentAdapter(getActivity(), browseList);
-                mListView.setAdapter(mBrowseAdapter);
-            } else {
-                mBrowseAdapter.refreshData(browseList);
-            }
-            setContentEmpty(false);
-        } else {
-            setContentEmpty(true);
-            mBrowseAdapter.refreshData(browseList);
-        }
+        mBrowseAdapter.refreshData(browseList);
     }
 
     @Override

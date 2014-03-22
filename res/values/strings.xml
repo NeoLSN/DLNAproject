@@ -27,6 +27,8 @@
     <string name="title_activity_now_playing">NowPlaying</string>
     <string name="unknown_artist">&lt;Unknown Artist&gt;</string>
     <string name="unknown_music">&lt;Unknown Music&gt;</string>
+    <string name="no_artist">&lt;No Artist&gt;</string>
+    <string name="no_music">&lt;No Music&gt;</string>
     <string name="play_queue">Play Queue</string>
 
 </resources>

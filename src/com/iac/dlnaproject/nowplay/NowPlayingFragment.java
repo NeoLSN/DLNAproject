@@ -11,19 +11,9 @@ import android.view.ViewGroup;
 
 public class NowPlayingFragment extends BaseFragment {
 
-    private View mContentView;
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        setContentView(mContentView);
-        super.onActivityCreated(savedInstanceState);
-        setContentShown(true);
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        mContentView = inflater.inflate(R.layout.fragment_now_playing, null);
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return inflater.inflate(R.layout.fragment_now_playing, null);
     }
 
     @Override

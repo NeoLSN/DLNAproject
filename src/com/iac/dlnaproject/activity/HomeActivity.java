@@ -36,8 +36,8 @@ public class HomeActivity extends FunctionBaseActivity {
 
     @Override
     protected void onDestroy() {
-        // stopService(new Intent(DLNAapp.getApplication(),
-        // MediaControllerService.class));
+        stopService(new Intent(DLNAapp.getApplication(),
+                MediaControllerService.class));
         super.onDestroy();
     }
 
