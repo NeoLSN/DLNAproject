@@ -2,11 +2,14 @@
 package com.iac.dlnaproject.nowplay;
 
 import com.iac.dlnaproject.ControllerProxy;
+import com.iac.dlnaproject.DataManager;
+import com.iac.dlnaproject.PlayQueue;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.adapter.PlayQueueAdapter;
 import com.iac.dlnaproject.fragment.BaseFragment;
 import com.iac.dlnaproject.model.UIEvent;
-import com.iac.dlnaproject.model.UIEventHelper;
+import com.iac.dlnaproject.patterns.Observable;
+import com.iac.dlnaproject.patterns.Observer;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 
@@ -18,15 +21,12 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class PlayQueueFragment extends BaseFragment implements OnItemClickListener {
+public class PlayQueueFragment extends BaseFragment implements OnItemClickListener, Observer {
 
     private DragSortListView mQueueList;
     private DragSortController mController;
     private PlayQueueAdapter mBrowseAdapter;
-    private List<MediaItem> mPlayQueue;
+    private PlayQueue mPlayQueue;
     private View mEmptyView;
 
     public static Fragment getInstance(Bundle args) {
@@ -35,11 +35,6 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
             fragment.setArguments(args);
         }
         return fragment;
-    }
-
-    public PlayQueueFragment() {
-        super();
-        mPlayQueue = new ArrayList<MediaItem>();
     }
 
     @Override
@@ -72,37 +67,32 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
     public void onActivityCreated(Bundle savedInstanceState) {
         // same as restoreInstanceState on activity
         super.onActivityCreated(savedInstanceState);
+        mPlayQueue = DataManager.getInstance().getPlayQueue();
+        mPlayQueue.regesiterObserver(this);
+        mBrowseAdapter = new PlayQueueAdapter(getActivity(), mPlayQueue);
+        mQueueList.setAdapter(mBrowseAdapter);
         updateQueueData();
     }
 
+    @Override
+    public void onDestroyView() {
+        mPlayQueue.unregesiterObserver(this);
+        super.onDestroyView();
+    }
+
     public void updateQueueData() {
-        if (!mPlayQueue.isEmpty()) {
-            if (mBrowseAdapter == null) {
-                mBrowseAdapter = new PlayQueueAdapter(getActivity(), mPlayQueue);
-                mQueueList.setAdapter(mBrowseAdapter);
-            } else {
-                mBrowseAdapter.refreshData(mPlayQueue);
-            }
-        }
+        mBrowseAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void receive(UIEvent message) {
-        switch (UIEventHelper.match(message)) {
-            case UIEventHelper.ITEM_SELECTED:
-                MediaItem item = (MediaItem)message.getObject();
-                mPlayQueue.add(item);
-                updateQueueData();
-                break;
-        }
 
     }
 
-    private DragSortListView.DropListener onDrop =
-            new DragSortListView.DropListener() {
+    private DragSortListView.DropListener onDrop = new DragSortListView.DropListener() {
         @Override
         public void drop(int from, int to) {
-            MediaItem item=mBrowseAdapter.getItem(from);
+            MediaItem item = mBrowseAdapter.getItem(from);
 
             mBrowseAdapter.remove(item);
             mBrowseAdapter.insert(item, to);
@@ -110,8 +100,7 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
         }
     };
 
-    private DragSortListView.RemoveListener onRemove =
-            new DragSortListView.RemoveListener() {
+    private DragSortListView.RemoveListener onRemove = new DragSortListView.RemoveListener() {
         @Override
         public void remove(int which) {
             mBrowseAdapter.remove(mBrowseAdapter.getItem(which));
@@ -142,7 +131,13 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
             }
 
         };
-        Thread t = new Thread(r);t.start();
+        Thread t = new Thread(r);
+        t.start();
+    }
+
+    @Override
+    public void update(Observable observable) {
+        updateQueueData();
     }
 
 }

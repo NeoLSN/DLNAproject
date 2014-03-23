@@ -5,8 +5,8 @@ import com.iac.dlnaproject.NetworkStatusReceiver.OnNetworkChangedListener;
 import com.iac.dlnaproject.loader.BrowseParams;
 import com.iac.dlnaproject.loader.BrowseResult;
 import com.iac.dlnaproject.nowplay.Item;
-import com.iac.dlnaproject.patterns.Observable;
 import com.iac.dlnaproject.patterns.Observer;
+import com.iac.dlnaproject.patterns.impl.Observable;
 
 import org.cybergarage.upnp.Device;
 import org.cybergarage.upnp.UPnP;
@@ -204,11 +204,11 @@ public class ControllerProxy {
     }
 
     public void attach(Observer observer) {
-        mCPDeviceNotifier.attach(observer);
+        mCPDeviceNotifier.regesiterObserver(observer);
     }
 
     public void detach(Observer observer) {
-        mCPDeviceNotifier.detach(observer);
+        mCPDeviceNotifier.unregesiterObserver(observer);
     }
 
     public class ControlPointDeviceNotifier extends Observable implements DeviceChangeListener, NotifyListener, SearchResponseListener {

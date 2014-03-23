@@ -18,11 +18,13 @@ public class DLNAapp extends Application {
         // init
         //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         mControllerProxy = ControllerProxy.init(this);
+        DataManager.init(this);
     }
 
     @Override
     public void onTerminate() {
         mControllerProxy.terminate();
+        DataManager.terminate();
         stopService(new Intent(this,
                 MediaControllerService.class));
         super.onTerminate();

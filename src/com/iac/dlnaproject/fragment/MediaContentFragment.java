@@ -1,6 +1,7 @@
 
 package com.iac.dlnaproject.fragment;
 
+import com.iac.dlnaproject.DataManager;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.adapter.ContentAdapter;
 import com.iac.dlnaproject.loader.BrowseParams;
@@ -35,6 +36,8 @@ LoaderCallbacks<BrowseResult> {
 
     private List<Item> browseList;
     private BrowseParams mBrowseParams;
+
+    private DataManager mManager;
 
     public static Fragment getInstance(Bundle args) {
         Fragment fragment = new MediaContentFragment();
@@ -74,6 +77,12 @@ LoaderCallbacks<BrowseResult> {
         browseList = new ArrayList<Item>();
         mBrowseAdapter = new ContentAdapter(getActivity(), browseList);
         mListView.setAdapter(mBrowseAdapter);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mManager = DataManager.getInstance();
     }
 
     @Override
@@ -128,7 +137,7 @@ LoaderCallbacks<BrowseResult> {
             obtainData();
         } else if (item instanceof MediaItem) {
             UIEvent message = UIEvent.create(UIEvent.TYPE_ITEM_SELECTED);
-            message.setObject(item);
+            mManager.getPlayQueue().add((MediaItem)item);
             send(message);
 
             // ContentResolver r = getActivity().getContentResolver();

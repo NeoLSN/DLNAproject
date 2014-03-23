@@ -40,7 +40,7 @@
                 android:layout_marginLeft="4dp"
                 android:layout_marginRight="4dp"
                 android:layout_marginTop="8dip"
-                android:src="@drawable/ab_background_textured_iac" />
+                android:src="@drawable/ab_background_textured_dlna" />
 
         </FrameLayout>
 
@@ -84,7 +84,7 @@
                 android:id="@+id/audio_prev"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:background="@drawable/play_bar_btn_done_iac"
+                android:background="@drawable/play_bar_btn"
                 android:scaleType="fitXY"
                 android:src="@drawable/icon_play_prev" />
 
@@ -92,7 +92,7 @@
                 android:id="@+id/audio_play"
                 android:layout_width="72dp"
                 android:layout_height="72dp"
-                android:background="@drawable/play_bar_btn_done_iac"
+                android:background="@drawable/play_bar_btn"
                 android:scaleType="fitXY"
                 android:src="@drawable/icon_play" />
 
@@ -100,7 +100,7 @@
                 android:id="@+id/audio_stop"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:background="@drawable/play_bar_btn_done_iac"
+                android:background="@drawable/play_bar_btn"
                 android:scaleType="fitXY"
                 android:src="@drawable/icon_play_stop" />
 
@@ -108,7 +108,7 @@
                 android:id="@+id/audio_next"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:background="@drawable/play_bar_btn_done_iac"
+                android:background="@drawable/play_bar_btn"
                 android:scaleType="fitXY"
                 android:src="@drawable/icon_play_next" />
         </LinearLayout>

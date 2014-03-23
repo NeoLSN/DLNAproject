@@ -2,7 +2,6 @@
 package com.iac.dlnaproject.adapter;
 
 import com.iac.dlnaproject.R;
-import com.iac.dlnaproject.nowplay.ContainerItem;
 import com.iac.dlnaproject.nowplay.Item;
 import com.iac.dlnaproject.nowplay.MediaItem;
 
@@ -41,11 +40,8 @@ public class PlayQueueAdapter extends BaseAdapterWithViewHolder<MediaItem> {
             ViewGroup parent) {
         Item dataItem = getItem(position);
         viewHolder.itemTitle.setText(dataItem.getTitle());
-        if (dataItem instanceof ContainerItem) {
-            viewHolder.iconImage.setImageResource(R.drawable.ic_action_computer);
-        } else if (dataItem instanceof MediaItem) {
-            viewHolder.iconImage.setImageResource(R.drawable.icon_schedule_mark);
-        }
-        viewHolder.itemActionImage1.setOnClickListener(null);
+        viewHolder.iconImage.setImageResource(R.drawable.icon_schedule_mark);
+        viewHolder.itemActionImage1.setImageResource(R.drawable.ic_action_cancel);
+        viewHolder.itemActionImage1.setVisibility(View.VISIBLE);
     }
 }

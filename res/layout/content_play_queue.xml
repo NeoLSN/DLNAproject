@@ -10,7 +10,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:background="@drawable/ab_solid_iac"
+        android:background="@drawable/ab_solid_dlna"
         android:gravity="center_vertical" >
 
         <TextView
@@ -28,7 +28,7 @@
             android:id="@+id/playButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/play_bar_btn_done_iac"
+            android:background="@drawable/play_bar_btn"
             android:src="@drawable/icon_play"
             android:visibility="gone" />
     </LinearLayout>
