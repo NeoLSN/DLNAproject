@@ -5,8 +5,9 @@ import com.iac.dlnaproject.NetworkStatusReceiver.OnNetworkChangedListener;
 import com.iac.dlnaproject.loader.BrowseParams;
 import com.iac.dlnaproject.loader.BrowseResult;
 import com.iac.dlnaproject.nowplay.Item;
+import com.iac.dlnaproject.nowplay.Player;
+import com.iac.dlnaproject.patterns.Observable;
 import com.iac.dlnaproject.patterns.Observer;
-import com.iac.dlnaproject.patterns.impl.Observable;
 
 import org.cybergarage.upnp.Device;
 import org.cybergarage.upnp.UPnP;
@@ -22,10 +23,12 @@ import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-public class ControllerProxy {
+public class ControllerProxy implements Observable, DeviceChangeListener,
+NotifyListener, SearchResponseListener {
 
     public static final String KEY_PREFERED_SOURCE = "key_perfered_source";
     public static final String KEY_PREFERED_RENDERER = "key_perfered_sink";
@@ -39,8 +42,10 @@ public class ControllerProxy {
 
     private IACMediaController mIACMediaController;
     private NetworkStatusReceiver mNetworkStatusReceiver;
+    private final ArrayList<Observer> mObservers;
+    private Iterator<Observer> mIterator;
 
-    private ControlPointDeviceNotifier mCPDeviceNotifier;
+    private Player mPlayer;
 
     public static synchronized ControllerProxy getInstance() {
         return sInstance;
@@ -56,28 +61,30 @@ public class ControllerProxy {
 
     private ControllerProxy(Context context) {
         mContext = context;
-        mCPDeviceNotifier = new ControlPointDeviceNotifier();
+        mObservers = new ArrayList<Observer>();
         mStack = new Stack<BrowseResult>();
+        mPlayer = new Player();
     }
 
     public void terminate() {
+        if (mPlayer != null)
+            mPlayer.stopChecking();
         mStack.clear();
         setControlPoint(null);
-        mCPDeviceNotifier = null;
         unRegisterNetworkStatusReceiver();
     }
 
     public void setControlPoint(IACMediaController controlPoint) {
         if (controlPoint != null) {
-            controlPoint.search(getPerferedSourceUDN());
-            controlPoint.search(getPerferedRendererUDN());
-            controlPoint.addDeviceChangeListener(mCPDeviceNotifier);
-            controlPoint.addNotifyListener(mCPDeviceNotifier);
-            controlPoint.addSearchResponseListener(mCPDeviceNotifier);
+            controlPoint.search(getPreferedSourceUDN());
+            controlPoint.search(getPreferedPlayerUDN());
+            controlPoint.addDeviceChangeListener(this);
+            controlPoint.addNotifyListener(this);
+            controlPoint.addSearchResponseListener(this);
         } else if (mIACMediaController != null) {
-            mIACMediaController.removeDeviceChangeListener(mCPDeviceNotifier);
-            mIACMediaController.removeNotifyListener(mCPDeviceNotifier);
-            mIACMediaController.removeSearchResponseListener(mCPDeviceNotifier);
+            mIACMediaController.removeDeviceChangeListener(this);
+            mIACMediaController.removeNotifyListener(this);
+            mIACMediaController.removeSearchResponseListener(this);
             mIACMediaController.stop();
         }
         mIACMediaController = controlPoint;
@@ -110,37 +117,40 @@ public class ControllerProxy {
         }
     }
 
-    public Device getSelectedServer() {
+    public Device getPreferedServer() {
         return mServer;
     }
 
     public boolean isMeidaServerWorking() {
-        return (mServer != null) ? true : false;
+        return (getPreferedServer() != null) ? true : false;
     }
 
-    public void setSelectedServer(Device server) {
+    public void setPreferedServer(Device server) {
         mServer = server;
         savePreference(KEY_PREFERED_SOURCE, (server != null) ? server.getUDN() : "");
     }
 
-    public Device getSelectedRenderer() {
-        return mRenderer;
-    }
-
-    public boolean isMeidaRendererWorking() {
+    public boolean isMeidaPlayerWorking() {
         return (mRenderer != null) ? true : false;
     }
 
-    public void setSelectedRenderer(Device renderer) {
+    public void setPreferedRenderer(Device renderer) {
         mRenderer = renderer;
+        if (renderer != null) {
+            mPlayer.stopChecking();
+            mPlayer.setDevice(renderer);
+            mPlayer.startChecking();
+        } else {
+            mPlayer.stopChecking();
+        }
         savePreference(KEY_PREFERED_RENDERER, (renderer != null) ? renderer.getUDN() : "");
     }
 
-    public String getPerferedSourceUDN() {
+    public String getPreferedSourceUDN() {
         return getPreference(KEY_PREFERED_SOURCE);
     }
 
-    public String getPerferedRendererUDN() {
+    public String getPreferedPlayerUDN() {
         return getPreference(KEY_PREFERED_RENDERER);
     }
 
@@ -161,9 +171,9 @@ public class ControllerProxy {
     }
 
     public BrowseResult getContentDirectory(BrowseParams params) {
-        if (mServer == null)
+        if (getPreferedServer() == null)
             return null;
-        List<Item> node = mIACMediaController.browse(mServer, params.objectId);
+        List<Item> node = mIACMediaController.browse(getPreferedServer(), params.objectId);
         BrowseResult result = new BrowseResult(params, node);
         BrowseResult lastResult = peekItems();
         if (lastResult == null || !lastResult.getParams().objectId.equals(params.objectId))
@@ -203,55 +213,74 @@ public class ControllerProxy {
         return browseList;
     }
 
-    public void attach(Observer observer) {
-        mCPDeviceNotifier.regesiterObserver(observer);
+    @Override
+    public void regesiterObserver(Observer observer) {
+        mObservers.add(observer);
     }
 
-    public void detach(Observer observer) {
-        mCPDeviceNotifier.unregesiterObserver(observer);
+    @Override
+    public void unregesiterObserver(Observer observer) {
+        if (mIterator != null) {
+            mIterator.remove();
+        } else {
+            mObservers.remove(observer);
+        }
     }
 
-    public class ControlPointDeviceNotifier extends Observable implements DeviceChangeListener, NotifyListener, SearchResponseListener {
-
-        @Override
-        public void deviceAdded(Device dev) {
-            String sourceUDN = getPerferedSourceUDN();
-            if (dev.getUDN().equalsIgnoreCase(sourceUDN)) {
-                mServer = dev;
-                notifyObservers();
-            }
-
-            String rendererUDN = getPerferedRendererUDN();
-            if (dev.getUDN().equalsIgnoreCase(rendererUDN)) {
-                mRenderer = dev;
-                notifyObservers();
-            }
-        }
-
-        @Override
-        public void deviceRemoved(Device dev) {
-            String sourceUDN = getPerferedSourceUDN();
-            if (dev.equals(mServer) || dev.getUDN().equalsIgnoreCase(sourceUDN)) {
-                mServer = null;
-                notifyObservers();
-            }
-
-            String rendererUDN = getPerferedRendererUDN();
-            if (dev.equals(mRenderer) || dev.getUDN().equalsIgnoreCase(rendererUDN)) {
-                mRenderer = null;
-                notifyObservers();
-            }
-        }
-
-        @Override
-        public void deviceSearchResponseReceived(SSDPPacket ssdpPacket) {
+    @Override
+    public void deviceAdded(Device dev) {
+        String sourceUDN = getPreferedSourceUDN();
+        if (dev.getUDN().equalsIgnoreCase(sourceUDN)) {
+            setPreferedServer(dev);
             notifyObservers();
         }
 
-        @Override
-        public void deviceNotifyReceived(SSDPPacket ssdpPacket) {
+        String rendererUDN = getPreferedPlayerUDN();
+        if (dev.getUDN().equalsIgnoreCase(rendererUDN)) {
+            setPreferedRenderer(dev);
+            notifyObservers();
+        }
+    }
+
+    @Override
+    public void deviceRemoved(Device dev) {
+        String sourceUDN = getPreferedSourceUDN();
+        if (dev.equals(mServer) || dev.getUDN().equalsIgnoreCase(sourceUDN)) {
+            setPreferedServer(null);
             notifyObservers();
         }
 
+        String rendererUDN = getPreferedPlayerUDN();
+        if (dev.equals(mRenderer) || dev.getUDN().equalsIgnoreCase(rendererUDN)) {
+            setPreferedRenderer(null);
+            notifyObservers();
+        }
     }
+
+    @Override
+    public void deviceSearchResponseReceived(SSDPPacket ssdpPacket) {
+        notifyObservers();
+    }
+
+    @Override
+    public void deviceNotifyReceived(SSDPPacket ssdpPacket) {
+        notifyObservers();
+    }
+
+    @Override
+    public void notifyObservers() {
+        mIterator = mObservers.iterator();
+        try {
+            while (mIterator.hasNext()) {
+                mIterator.next().update(this);
+            }
+        } finally {
+            mIterator = null;
+        }
+    }
+
+    public Player getPreferedPlayer() {
+        return mPlayer;
+    }
+
 }

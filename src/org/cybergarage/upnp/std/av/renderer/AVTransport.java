@@ -127,6 +127,7 @@ public class AVTransport extends AbstractService implements Observer//implements
     public final static String NORMAL = "NORMAL";
     public final static String TRACK_NR = "TRACK_NR";
     /*Jason*/
+    public final static String REL_TIME = "REL_TIME";
     public final static String NONE = "NONE";
     public final static String NETWORK = "NETWORK";
     public final static String PAUSED_PLAYBACK = "PAUSED_PLAYBACK";

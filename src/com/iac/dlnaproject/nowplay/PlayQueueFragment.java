@@ -127,7 +127,7 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
             @Override
             public void run() {
                 ControllerProxy ctrlProxy = ControllerProxy.getInstance();
-                ctrlProxy.getControlPoint().play(ctrlProxy.getSelectedRenderer(), item);
+                ctrlProxy.getPreferedPlayer().play(item);
             }
 
         };

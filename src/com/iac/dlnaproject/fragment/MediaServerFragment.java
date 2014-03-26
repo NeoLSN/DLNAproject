@@ -67,13 +67,13 @@ public class MediaServerFragment extends RefreshableBaseFragment implements OnIt
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         mCtrlProxy = ControllerProxy.getInstance();
-        mCtrlProxy.attach(this);
+        mCtrlProxy.regesiterObserver(this);
         super.onActivityCreated(savedInstanceState);
     }
 
     @Override
     public void onDestroyView() {
-        mCtrlProxy.detach(this);
+        mCtrlProxy.unregesiterObserver(this);
         mHandler.removeMessages(0);
         super.onDestroyView();
     }
@@ -111,7 +111,7 @@ public class MediaServerFragment extends RefreshableBaseFragment implements OnIt
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Device d = (Device)parent.getItemAtPosition(position);
-        mCtrlProxy.setSelectedServer(d);
+        mCtrlProxy.setPreferedServer(d);
         UIEvent message = UIEvent.create(UIEvent.TYPE_ITEM_SELECTED_AND_COMPLETED);
         send(message);
     }

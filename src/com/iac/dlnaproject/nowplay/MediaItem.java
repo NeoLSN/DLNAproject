@@ -7,6 +7,7 @@ import com.iac.dlnaproject.constant.UPnP;
 
 import org.cybergarage.xml.Attribute;
 import org.cybergarage.xml.Node;
+import org.cybergarage.xml.XML;
 import org.json.JSONObject;
 
 import android.os.Parcel;
@@ -303,7 +304,7 @@ public class MediaItem implements Item, Parcelable {
         this.album = album;
     }
 
-    public String getAlbumarturi() {
+    public String getAlbumArtUri() {
         return albumArtUri;
     }
 
@@ -362,6 +363,35 @@ public class MediaItem implements Item, Parcelable {
     @Override
     public Node getNode() {
         return node;
+    }
+
+    public String getURIMetadata() {
+        if (getNode() != null) {
+            return getNode().toString();
+        } else {
+            StringBuilder sb = new StringBuilder("<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns:r=\"urn:schemas-rinconnetworks-com:metadata-1-0/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">");
+            String id = this.id;
+            String parentId = this.parentId;
+            if (id == null) id = "-1";
+            if (parentId == null) parentId = "-1";
+
+            sb.append("<item id=\"").append(id).append("\" parentID=\"").append(parentId).append("\" restricted=\"").append(restricted).append("\">");
+            sb.append("<dc:title>").append(XML.escapeXMLChars(title)).append("</dc:title>");
+            sb.append("<upnp:class>").append(objectClass).append("</upnp:class>");
+            /*if (encodedUri != null && encodedUri.startsWith("x-sonosapi-stream:")) {
+            sb.append("<desc id=\"cdudn\" nameSpace=\"urn:schemas-rinconnetworks-com:metadata-1-0/\">SA_RINCON65031_</desc>");
+            } else if (cdudn != null) {
+                sb.append("<desc id=\"cdudn\" nameSpace=\"urn:schemas-rinconnetworks-com:metadata-1-0/\">").append(cdudn).append("</desc>");
+            } else {
+                sb.append("<desc id=\"cdudn\">RINCON_AssociatedZPUDN</desc>");
+            }*/
+            if (albumArtUri != null) {
+                sb.append("<upnp:albumArtURI>").append(XML.escapeXMLChars(albumArtUri)).append("</upnp:albumArtURI>");
+            }
+            sb.append("</item>");
+            sb.append("</DIDL-Lite>");
+            return sb.toString();
+        }
     }
 
     @Override

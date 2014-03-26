@@ -1,15 +1,23 @@
 
 package com.iac.dlnaproject.activity;
 
-import com.iac.dlnaproject.MediaPlayingMonitorService;
+import com.iac.dlnaproject.ControllerProxy;
 import com.iac.dlnaproject.R;
 import com.iac.dlnaproject.model.UIEvent;
+import com.iac.dlnaproject.nowplay.MediaItem;
+import com.iac.dlnaproject.nowplay.Player;
+import com.iac.dlnaproject.nowplay.Player.ChangeListener;
+import com.iac.dlnaproject.nowplay.PlayerInfo;
+import com.iac.dlnaproject.patterns.Observable;
+import com.iac.dlnaproject.patterns.Observer;
+import com.iac.dlnaproject.util.XmlParser;
 import com.viewpagerindicator.PageIndicator;
 
-import android.content.ComponentName;
-import android.content.Context;
+import org.cybergarage.upnp.std.av.renderer.AVTransport;
+import org.cybergarage.xml.Node;
+import org.cybergarage.xml.ParserException;
+
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,25 +39,35 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FunctionBaseActivity extends ActionBarActivity {
+public abstract class FunctionBaseActivity extends ActionBarActivity implements Observer, ChangeListener {
 
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
 
+    private ControllerProxy mCtrlProxy;
+    private Player mPlayer;
+
     private boolean hasLeftMenu = false;
     private boolean hasRightMenu = false;
 
-    private boolean isBind = false;
-    private Messenger bindService;
-    private final Messenger mMessenger = new Messenger(new IncomingHandler());
+    // private boolean isBind = false;
+    // private Messenger bindService;
+    // private final Messenger mMessenger = new Messenger(new
+    // IncomingHandler());
 
     private ViewPager mPager;
     private View mMainLayout;
     private View nowPlayingBar;
+    private TextView barTitle;
+    private TextView barSubtitle;
+    private ImageButton playButton;
+    private ImageButton stopButton;
     private PageIndicator mIndicator;
 
     @Override
@@ -90,8 +108,46 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
         getSupportActionBar().setHomeButtonEnabled(true);
         ensureDrawerToggleState();
 
-        doBindService();
+        // doBindService();
         nowPlayingBar = findViewById(R.id.now_playing_bar);
+        barTitle = (TextView)nowPlayingBar.findViewById(R.id.title);
+        barSubtitle = (TextView)nowPlayingBar.findViewById(R.id.subtitle);
+        playButton = (ImageButton)nowPlayingBar.findViewById(R.id.playButton);
+        playButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if (mPlayer != null) {
+                    Runnable r = new Runnable() {
+                        @Override
+                        public void run() {
+                            mPlayer.toggleState();
+                        }
+                    };
+                    Thread t = new Thread(r);
+                    t.start();
+                }
+            }
+
+        });
+        stopButton = (ImageButton)nowPlayingBar.findViewById(R.id.stopButton);
+        stopButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if (mPlayer != null) {
+                    Runnable r = new Runnable() {
+                        @Override
+                        public void run() {
+                            mPlayer.stop();
+                        }
+                    };
+                    Thread t = new Thread(r);
+                    t.start();
+                }
+            }
+
+        });
         nowPlayingBar.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -101,12 +157,30 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
             }
 
         });
+        mCtrlProxy = ControllerProxy.getInstance();
+        mPlayer = mCtrlProxy.getPreferedPlayer();
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mCtrlProxy.unregesiterObserver(this);
+        mPlayer.removeListener(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mCtrlProxy.regesiterObserver(this);
+        mPlayer.addListener(this);
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        doUnbindService();
+        // doUnbindService();
     }
 
     @Override
@@ -148,8 +222,7 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
                 } else {
                     Intent upIntent = NavUtils.getParentActivityIntent(this);
                     if (NavUtils.shouldUpRecreateTask(this, upIntent)) {
-                        TaskStackBuilder.create(this)
-                        .addNextIntentWithParentStack(upIntent)
+                        TaskStackBuilder.create(this).addNextIntentWithParentStack(upIntent)
                         .startActivities();
                     } else {
                         NavUtils.navigateUpTo(this, upIntent);
@@ -237,61 +310,119 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
         return mIndicator;
     }
 
-    //now playing bar update
-    protected void doBindService() {
-        Intent intent = new Intent(this, MediaPlayingMonitorService.class);
-        bindService(intent, conn, Context.BIND_AUTO_CREATE);
+    protected Player getPlayer() {
+        return mPlayer;
     }
 
-    protected void doUnbindService() {
-        if (isBind) {
-            if (bindService != null) {
-                try {
-                    Message msg = Message.obtain(null,
-                            MediaPlayingMonitorService.MSG_UNREGISTER_CLIENT);
-                    msg.replyTo = mMessenger;
-                    bindService.send(msg);
-                } catch (RemoteException e) {
+    protected void setPlayer(Player player) {
+        mPlayer = player;
+    }
+
+    @Override
+    public void playerChanged(Player player) {
+        updateNowPlayingBar(player);
+    }
+
+    private void updateNowPlayingBar(final Player player) {
+        if (getNowPlayingBar().getVisibility() == View.VISIBLE) {
+            Runnable r = new Runnable() {
+                @Override
+                public void run() {
+                    PlayerInfo playerInfo = player.getPlayerInfo();
+                    String currentMediaMetadata = playerInfo.getProperties().get(
+                            AVTransport.CURRENTURIMETADATA);
+                    XmlParser p = new XmlParser();
+                    Node node;
+                    try {
+                        node = p.parse(currentMediaMetadata);
+                        if (node != null && node.getName().equals("item")) {
+                            MediaItem item = new MediaItem(node);
+                            barTitle.setText(item.getTitle());
+                            barSubtitle.setText(item.getArtist());
+                        }
+                    } catch (ParserException e) {
+                        e.printStackTrace();
+                    }
+                    if (player.isPlaying()) {
+                        playButton.setImageResource(R.drawable.icon_play_pause);
+                    } else {
+                        playButton.setImageResource(R.drawable.icon_play);
+                    }
                 }
-            }
-            unbindService(conn);
-            isBind = false;
+            };
+
+            runOnUiThread(r);
         }
     }
 
-    private ServiceConnection conn = new ServiceConnection() {
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            bindService = null;
-        }
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            bindService = new Messenger(service);
-            try {
-                Message msg = Message.obtain(null,
-                        MediaPlayingMonitorService.MSG_REGISTER_CLIENT);
-                msg.replyTo = mMessenger;
-                bindService.send(msg);
-            } catch (RemoteException e) {
-            }
-            isBind = true;
-        }
-    };
-
-    class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            //update now playing bar
-            switch (msg.what) {
-                default:
-                    super.handleMessage(msg);
+    @Override
+    public void update(Observable observable) {
+        Player player = mCtrlProxy.getPreferedPlayer();
+        if (player != null) {
+            if (mPlayer == null) {
+                mPlayer = player;
+                player.addListener(this);
+            } else if (!mPlayer.equals(player)) {
+                mPlayer.removeListener(this);
+                mPlayer = player;
+                player.addListener(this);
             }
         }
     }
 
-    //UI control
+    // now playing bar update
+    // protected void doBindService() {
+    // Intent intent = new Intent(this, MediaPlayingMonitorService.class);
+    // bindService(intent, conn, Context.BIND_AUTO_CREATE);
+    // }
+    //
+    // protected void doUnbindService() {
+    // if (isBind) {
+    // if (bindService != null) {
+    // try {
+    // Message msg = Message.obtain(null,
+    // MediaPlayingMonitorService.MSG_UNREGISTER_CLIENT);
+    // msg.replyTo = mMessenger;
+    // bindService.send(msg);
+    // } catch (RemoteException e) {
+    // }
+    // }
+    // unbindService(conn);
+    // isBind = false;
+    // }
+    // }
+    //
+    // private ServiceConnection conn = new ServiceConnection() {
+    // @Override
+    // public void onServiceDisconnected(ComponentName name) {
+    // bindService = null;
+    // }
+    //
+    // @Override
+    // public void onServiceConnected(ComponentName name, IBinder service) {
+    // bindService = new Messenger(service);
+    // try {
+    // Message msg = Message.obtain(null,
+    // MediaPlayingMonitorService.MSG_REGISTER_CLIENT);
+    // msg.replyTo = mMessenger;
+    // bindService.send(msg);
+    // } catch (RemoteException e) {
+    // }
+    // isBind = true;
+    // }
+    // };
+    //
+    // class IncomingHandler extends Handler {
+    // @Override
+    // public void handleMessage(Message msg) { // update now playing bar
+    // switch (msg.what) {
+    // default:
+    // super.handleMessage(msg);
+    // }
+    // }
+    // }
+
+    // UI control
     private List<Messenger> mClients = new ArrayList<Messenger>();
     private final Messenger mHostMessenger = new Messenger(new UIControlHandler());
 
@@ -302,7 +433,7 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
     class UIControlHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            //update
+            // update
             switch (msg.what) {
                 case MSG_REGISTER_CLIENT:
                     mClients.add(msg.replyTo);
@@ -313,8 +444,9 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
                 case MSG_UPDATE_VIEW:
                     for (int i = mClients.size() - 1; i >= 0; i--) {
                         try {
-                            //TODO: send update message
-                            mClients.get(i).send(Message.obtain(null, MSG_UPDATE_VIEW, 0, 0, msg.obj));
+                            // TODO: send update message
+                            mClients.get(i).send(
+                                    Message.obtain(null, MSG_UPDATE_VIEW, 0, 0, msg.obj));
                         } catch (RemoteException e) {
                             mClients.remove(i);
                         }
@@ -324,6 +456,14 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
                 default:
                     super.handleMessage(msg);
             }
+        }
+    }
+
+    protected void send(UIEvent event) {
+        try {
+            Message msg = Message.obtain(null, FunctionBaseActivity.MSG_UPDATE_VIEW, 0, 0, event);
+            mHostMessenger.send(msg);
+        } catch (RemoteException e) {
         }
     }
 
@@ -340,16 +480,8 @@ public abstract class FunctionBaseActivity extends ActionBarActivity {
         }
     }
 
-    protected void send(UIEvent event) {
-        try {
-            Message msg = Message.obtain(null,
-                    FunctionBaseActivity.MSG_UPDATE_VIEW, 0, 0, event);
-            mHostMessenger.send(msg);
-        } catch (RemoteException e) {
-        }
+    protected void receive(UIEvent obj) {
     }
-
-    protected void receive(UIEvent obj) {}
 
     public IBinder getBinder() {
         return mHostMessenger.getBinder();

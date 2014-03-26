@@ -67,13 +67,13 @@ public class MediaRendererFragment extends RefreshableBaseFragment implements On
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         mCtrlProxy = ControllerProxy.getInstance();
-        mCtrlProxy.attach(this);
+        mCtrlProxy.regesiterObserver(this);
         super.onActivityCreated(savedInstanceState);
     }
 
     @Override
     public void onDestroyView() {
-        mCtrlProxy.detach(this);
+        mCtrlProxy.unregesiterObserver(this);
         mHandler.removeMessages(0);
         super.onDestroyView();
     }
@@ -112,7 +112,7 @@ public class MediaRendererFragment extends RefreshableBaseFragment implements On
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Device d = (Device)parent.getItemAtPosition(position);
-        mCtrlProxy.setSelectedRenderer(d);
+        mCtrlProxy.setPreferedRenderer(d);
         UIEvent message = UIEvent.create(UIEvent.TYPE_ITEM_SELECTED_AND_COMPLETED);
         send(message);
     }

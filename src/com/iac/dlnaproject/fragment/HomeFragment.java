@@ -40,7 +40,7 @@ public class HomeFragment extends BaseFragment implements Observer {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         mCtrlProxy = ControllerProxy.getInstance();
-        mCtrlProxy.attach(this);
+        mCtrlProxy.regesiterObserver(this);
 
         initMainButtons();
         super.onActivityCreated(savedInstanceState);
@@ -54,7 +54,7 @@ public class HomeFragment extends BaseFragment implements Observer {
 
     @Override
     public void onDestroyView() {
-        mCtrlProxy.detach(this);
+        mCtrlProxy.unregesiterObserver(this);
         super.onDestroyView();
     }
 
@@ -95,12 +95,12 @@ public class HomeFragment extends BaseFragment implements Observer {
     }
 
     public void ensureMainButtons() {
-        if (mCtrlProxy.isMeidaRendererWorking()) {
+        if (mCtrlProxy.isMeidaPlayerWorking()) {
             sourceBtn.setEnabled(true);
         } else {
             sourceBtn.setEnabled(false);
         }
-        if (mCtrlProxy.isMeidaServerWorking() && mCtrlProxy.isMeidaRendererWorking()) {
+        if (mCtrlProxy.isMeidaServerWorking() && mCtrlProxy.isMeidaPlayerWorking()) {
             mediaBtn.setEnabled(true);
         } else {
             mediaBtn.setEnabled(false);
