@@ -13,16 +13,21 @@ import org.cybergarage.upnp.std.av.renderer.MediaRenderer;
 import org.cybergarage.upnp.std.av.renderer.RenderingControl;
 
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Player {
+
     private boolean isRunning = false;
     private int track;
     private Device dev;
@@ -46,11 +51,17 @@ public class Player {
     private Drawable icon;
     private PlayerInfo playerInfo;
 
-    private final ArrayList<ChangeListener> mListeners;
+    private MediaItem mMediaItem;
+    private final Set<ChangeListener> mListeners;
     private Iterator<ChangeListener> mIterator;
+    private RequestQueue mRequestQueue;
+    private Executer mExecuter;
 
     public Player() {
-        mListeners = new ArrayList<ChangeListener>();
+        mListeners = new HashSet<ChangeListener>();
+        mRequestQueue = new RequestQueue();
+        mExecuter = new Executer(mRequestQueue);
+        mExecuter.start();
     }
 
     public void setDevice(Device dev) {
@@ -71,26 +82,39 @@ public class Player {
                 renderControlService = service;
             }
         }
+        Request r = new Request() {
+            @Override
+            public void execute() {
+                AllowedValueRange avr = Player.this.dev.getStateVariable(RenderingControl.VOLUME)
+                        .getAllowedValueRange();
+                setVolumeMax(Integer.valueOf(avr.getMaximum()));
+                setVolumeMin(Integer.valueOf(avr.getMinimum()));
+                setVolumeStep(Integer.valueOf(avr.getStep()));
+            }
+        };
+        mRequestQueue.put(r);
+    }
 
-        AllowedValueRange avr = dev.getStateVariable(RenderingControl.VOLUME).getAllowedValueRange();
-        setVolumeMax(Integer.valueOf(avr.getMaximum()));
-        setVolumeMin(Integer.valueOf(avr.getMinimum()));
-        setVolumeStep(Integer.valueOf(avr.getStep()));
+    @Override
+    protected void finalize() throws Throwable {
+        mExecuter.interrupt();
+        super.finalize();
     }
 
     public void startChecking() {
         stopChecking();
-        Runnable r = new Runnable() {
+        Request r = new Request() {
             @Override
-            public void run() {
-                Action ability = avtransportService.getAction(AVTransport.GETCURRENTTRANSPORTACTIONS);
+            public void execute() {
+                Action ability = avtransportService
+                        .getAction(AVTransport.GETCURRENTTRANSPORTACTIONS);
                 ability.setArgumentValue(AVTransport.INSTANCEID, "0");
                 ability.postControlAction();
                 setActions(ability.getArgumentValue(AVTransport.ACTIONS));
+                Log.i("Jason", ability.getArgumentValue(AVTransport.ACTIONS));
             }
         };
-        Thread t = new Thread(r);
-        t.start();
+        mRequestQueue.put(r);
         timer = new Timer("Player updater", true);
         timer.schedule(new TimerTask() {
             @Override
@@ -102,6 +126,8 @@ public class Player {
     }
 
     public void stopChecking() {
+        mRequestQueue.clear();
+
         if (timer != null) {
             timer.cancel();
             timer = null;
@@ -151,13 +177,14 @@ public class Player {
             getVolume.setArgumentValue(RenderingControl.INSTANCEID, "0");
             getVolume.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
             getVolume.postControlAction();
-            setVolume(getVolume.getArgumentIntegerValue(RenderingControl.CURRENTVOLUME));
+            volume = getVolume.getArgumentIntegerValue(RenderingControl.CURRENTVOLUME);
 
             Action getMute = renderControlService.getAction(RenderingControl.GETMUTE);
             getMute.setArgumentValue(RenderingControl.INSTANCEID, "0");
             getMute.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
             getMute.postControlAction();
-            setMute(getVolume.getArgumentIntegerValue(RenderingControl.CURRENTMUTE) == 1 ? true : false);
+            mute = getMute.getArgumentIntegerValue(RenderingControl.CURRENTMUTE) == 1 ? true
+                    : false;
         }
 
         notifyListener();
@@ -198,15 +225,6 @@ public class Player {
         SHUFFLE_NOREPEAT, NORMAL, REPEAT_ALL, SHUFFLE
     }
 
-    public void controlVolume(final int vol) {
-        Action a = renderControlService.getAction(RenderingControl.SETVOLUME);
-
-        a.setArgumentValue(RenderingControl.DESIREDVOLUME, vol);
-        a.setArgumentValue(RenderingControl.INSTANCEID, "0");
-        a.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
-        a.postControlAction();
-    }
-
     public int getVolume() {
         return volume;
     }
@@ -228,61 +246,93 @@ public class Player {
     }
 
     public void toggleState() {
-        Action a;
-        if (isPlaying()) {
-            a = avtransportService.getAction(AVTransport.PAUSE);
-        } else {
-            a = avtransportService.getAction(AVTransport.PLAY);
-            a.setArgumentValue(AVTransport.SPEED, "1");
-        }
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a;
+                if (isPlaying()) {
+                    a = avtransportService.getAction(AVTransport.PAUSE);
+                } else {
+                    a = avtransportService.getAction(AVTransport.PLAY);
+                    a.setArgumentValue(AVTransport.SPEED, "1");
+                }
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public void next() {
-        Action a = avtransportService.getAction(AVTransport.NEXT);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.NEXT);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public void prev() {
-        Action a = avtransportService.getAction(AVTransport.PREVIOUS);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.PREVIOUS);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public void stop() {
-        Action a = avtransportService.getAction(AVTransport.STOP);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.STOP);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public boolean isMute() {
         return mute;
     }
 
-    public void setMute(boolean isMute) {
-        mute = isMute;
-    }
-
     public void setVolume(int volume) {
         if (volume >= 0 && volume <= 100) {
             this.volume = volume;
-            Action s = renderControlService.getAction(RenderingControl.SETVOLUME);
-            s.setArgumentValue(RenderingControl.INSTANCEID, dev.getUDN());
-            s.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
-            s.setArgumentValue(RenderingControl.DESIREDMUTE, volume);
-            s.postControlAction();
+            Request request = new Request() {
+                @Override
+                public void execute() {
+                    Action a = renderControlService.getAction(RenderingControl.SETVOLUME);
+                    a.setArgumentValue(RenderingControl.DESIREDVOLUME, getVolume());
+                    a.setArgumentValue(RenderingControl.INSTANCEID, "0");
+                    a.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
+                    a.postControlAction();
+                }
+            };
+            mRequestQueue.put(request);
         }
     }
 
     public void toggleMute() {
-        Action mute = renderControlService.getAction(
-                RenderingControl.SETMUTE);
-        mute.setArgumentValue(RenderingControl.INSTANCEID, "0");
-        mute.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
-        mute.setArgumentValue(RenderingControl.DESIREDMUTE, isMute() ? "0" : "1");
-        mute.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action mute = renderControlService.getAction(RenderingControl.SETMUTE);
+                mute.setArgumentValue(RenderingControl.INSTANCEID, "0");
+                mute.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
+                mute.setArgumentValue(RenderingControl.DESIREDMUTE, isMute() ? "0"
+                        : "1");
+                mute.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public String getLocation() {
@@ -295,24 +345,24 @@ public class Player {
     }
 
     public void changeTo(MediaItem item) {
-        Action a = avtransportService.getAction(AVTransport.SETAVTRANSPORTURI);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.setArgumentValue(AVTransport.CURRENTURI, item.getRes().res);
-        a.setArgumentValue(AVTransport.CURRENTMEDIADURATION, item.getURIMetadata());
-        a.postControlAction();
+        if (item == null)
+            return;
+        mMediaItem = item;
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.SETAVTRANSPORTURI);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.setArgumentValue(AVTransport.CURRENTURI, getMediaItem().getRes().res);
+                a.setArgumentValue(AVTransport.CURRENTURIMETADATA, getMediaItem().getURIMetadata());
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
+
         if (!isPlaying()) {
             play();
         }
-    }
-
-    public void skipTo(int tracknum) {
-        Action s = avtransportService.getAction(AVTransport.SEEK);
-        s.setArgumentValue(AVTransport.INSTANCEID, "0");
-        s.setArgumentValue(AVTransport.UNIT, AVTransport.TRACK_NR);
-        s.setArgumentValue(AVTransport.TARGET, tracknum);
-        s.postControlAction();
-
-        play();
     }
 
     public String getUDN() {
@@ -320,41 +370,57 @@ public class Player {
     }
 
     public void play(MediaItem item) {
-        Action a = avtransportService.getAction(AVTransport.SETAVTRANSPORTURI);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.setArgumentValue(AVTransport.CURRENTURI, item.getRes().res);
-        a.setArgumentValue(AVTransport.CURRENTURIMETADATA, item.getURIMetadata());
-        a.postControlAction();
+        if (item == null)
+            return;
+        mMediaItem = item;
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.SETAVTRANSPORTURI);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.setArgumentValue(AVTransport.CURRENTURI, mMediaItem.getRes().res);
+                a.setArgumentValue(AVTransport.CURRENTURIMETADATA, mMediaItem.getURIMetadata());
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
 
         play();
     }
 
     private void play() {
-        Action a = avtransportService.getAction(AVTransport.PLAY);
-        a.setArgumentValue(AVTransport.SPEED, "1");
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        a.postControlAction();
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.PLAY);
+                a.setArgumentValue(AVTransport.SPEED, "1");
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
-    public void controlPlayMode(boolean shuffle, boolean repeat) {
-        Action a = avtransportService.getAction(AVTransport.SETPLAYMODE);
-        a.setArgumentValue(AVTransport.INSTANCEID, "0");
-        PlayMode mode;
+    public void setPlayMode(boolean shuffle, boolean repeat) {
         if (shuffle && repeat)
-            mode = PlayMode.SHUFFLE;
+            playMode = PlayMode.SHUFFLE;
         else if (shuffle)
-            mode = PlayMode.SHUFFLE_NOREPEAT;
+            playMode = PlayMode.SHUFFLE_NOREPEAT;
         else if (repeat)
-            mode = PlayMode.REPEAT_ALL;
+            playMode = PlayMode.REPEAT_ALL;
         else
-            mode = PlayMode.NORMAL;
+            playMode = PlayMode.NORMAL;
 
-        a.setArgumentValue(AVTransport.NEWPLAYMODE, mode.name());
-        a.postControlAction();
-    }
-
-    public void setState(String state) {
-        this.state = PlayerState.valueOf(state);
+        Request request = new Request() {
+            @Override
+            public void execute() {
+                Action a = avtransportService.getAction(AVTransport.SETPLAYMODE);
+                a.setArgumentValue(AVTransport.INSTANCEID, "0");
+                a.setArgumentValue(AVTransport.NEWPLAYMODE, playMode.name());
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(request);
     }
 
     public Device getDevice() {
@@ -381,10 +447,6 @@ public class Player {
         return u;
     }
 
-    public void setPlayMode(String mode) {
-        this.playMode = PlayMode.valueOf(mode);
-    }
-
     public boolean isRepeat() {
         return playMode == PlayMode.REPEAT_ALL || playMode == PlayMode.SHUFFLE;
     }
@@ -404,11 +466,17 @@ public class Player {
     public void setPosition(int value) {
         if (value >= 0 && value < duration) {
             this.position = value;
-            Action s = avtransportService.getAction(AVTransport.SEEK);
-            s.setArgumentValue(AVTransport.INSTANCEID, "0");
-            s.setArgumentValue(AVTransport.UNIT, AVTransport.REL_TIME);
-            s.setArgumentValue(AVTransport.TARGET, value);
-            s.postControlAction();
+            Request request = new Request() {
+                @Override
+                public void execute() {
+                    Action s = avtransportService.getAction(AVTransport.SEEK);
+                    s.setArgumentValue(AVTransport.INSTANCEID, "0");
+                    s.setArgumentValue(AVTransport.UNIT, AVTransport.REL_TIME);
+                    s.setArgumentValue(AVTransport.TARGET, position);
+                    s.postControlAction();
+                }
+            };
+            mRequestQueue.put(request);
         }
     }
 
@@ -472,11 +540,18 @@ public class Player {
     }
 
     public void controlLoudness(boolean loudness) {
-        Action a = renderControlService.getAction(RenderingControl.SETLOUDNESS);
-        a.setArgumentValue(RenderingControl.INSTANCEID, "0");
-        a.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
-        a.setArgumentValue(RenderingControl.DESIREDLOUDNESS, loudness ? "1" : "0");
-        a.postControlAction();
+        this.loudness = loudness;
+        Request r = new Request() {
+            @Override
+            public void execute() {
+                Action a = renderControlService.getAction(RenderingControl.SETLOUDNESS);
+                a.setArgumentValue(RenderingControl.INSTANCEID, "0");
+                a.setArgumentValue(RenderingControl.CHANNEL, RenderingControl.MASTER);
+                a.setArgumentValue(RenderingControl.DESIREDLOUDNESS, isLoudness() ? "1" : "0");
+                a.postControlAction();
+            }
+        };
+        mRequestQueue.put(r);
     }
 
     public void setActions(String value) {
@@ -558,5 +633,59 @@ public class Player {
 
     public void setVolumeStep(int volumeStep) {
         this.volumeStep = volumeStep;
+    }
+
+    public MediaItem getMediaItem() {
+        return mMediaItem;
+    }
+
+    interface Request {
+        void execute();
+    }
+
+    class RequestQueue {
+        private LinkedList<Request> requests;
+
+        RequestQueue() {
+            requests = new LinkedList<Request>();
+        }
+
+        synchronized Request get() {
+            while (requests.size() == 0) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return requests.removeFirst();
+        }
+
+        synchronized void put(Request request) {
+            requests.addLast(request);
+            notifyAll();
+        }
+
+        synchronized void clear() {
+            requests.clear();
+        }
+    }
+
+    class Executer extends Thread {
+        private RequestQueue queue;
+
+        Executer(RequestQueue queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                queue.get().execute();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {}
+            }
+        }
     }
 }

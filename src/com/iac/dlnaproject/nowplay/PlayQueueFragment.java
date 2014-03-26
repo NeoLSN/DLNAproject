@@ -122,17 +122,8 @@ public class PlayQueueFragment extends BaseFragment implements OnItemClickListen
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         final MediaItem item = (MediaItem)parent.getItemAtPosition(position);
-        Runnable r = new Runnable() {
-
-            @Override
-            public void run() {
-                ControllerProxy ctrlProxy = ControllerProxy.getInstance();
-                ctrlProxy.getPreferedPlayer().play(item);
-            }
-
-        };
-        Thread t = new Thread(r);
-        t.start();
+        ControllerProxy ctrlProxy = ControllerProxy.getInstance();
+        ctrlProxy.getPreferedPlayer().play(item);
     }
 
     @Override

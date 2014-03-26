@@ -118,14 +118,7 @@ public abstract class FunctionBaseActivity extends ActionBarActivity implements 
             @Override
             public void onClick(View v) {
                 if (mPlayer != null) {
-                    Runnable r = new Runnable() {
-                        @Override
-                        public void run() {
-                            mPlayer.toggleState();
-                        }
-                    };
-                    Thread t = new Thread(r);
-                    t.start();
+                    mPlayer.toggleState();
                 }
             }
 
@@ -136,14 +129,7 @@ public abstract class FunctionBaseActivity extends ActionBarActivity implements 
             @Override
             public void onClick(View v) {
                 if (mPlayer != null) {
-                    Runnable r = new Runnable() {
-                        @Override
-                        public void run() {
-                            mPlayer.stop();
-                        }
-                    };
-                    Thread t = new Thread(r);
-                    t.start();
+                    mPlayer.stop();
                 }
             }
 
@@ -174,7 +160,6 @@ public abstract class FunctionBaseActivity extends ActionBarActivity implements 
         super.onResume();
         mCtrlProxy.regesiterObserver(this);
         mPlayer.addListener(this);
-
     }
 
     @Override

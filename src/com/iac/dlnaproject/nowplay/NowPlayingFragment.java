@@ -94,35 +94,21 @@ OnSeekBarChangeListener, ChangeListener {
     }
 
     @Override
-    public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
-
-    }
+    public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {}
 
     @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-
-    }
+    public void onStartTrackingTouch(SeekBar seekBar) {}
 
     @Override
     public void onStopTrackingTouch(final SeekBar seekBar) {
         switch (seekBar.getId()) {
             case R.id.volume_bar:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mPlayer!= null)
-                            mPlayer.setVolume(seekBar.getProgress());
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.setVolume(seekBar.getProgress());
                 break;
             case android.R.id.progress:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mPlayer!= null)
-                            mPlayer.setPosition(seekBar.getProgress());
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.setPosition(seekBar.getProgress());
                 break;
         }
     }
@@ -132,58 +118,27 @@ OnSeekBarChangeListener, ChangeListener {
 
         switch (v.getId()) {
             case R.id.audio_prev:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-
-
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.prev();
                 break;
             case R.id.audio_play:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mPlayer!= null)
-                            mPlayer.toggleState();
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.toggleState();
                 break;
             case R.id.audio_stop:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mPlayer!= null)
-                            mPlayer.stop();
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.stop();
                 break;
             case R.id.audio_next:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-
-
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.next();
                 break;
             case R.id.volume:
-                excuteRunnable( new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mPlayer!= null)
-                            mPlayer.toggleMute();
-                    }
-                });
+                if (mPlayer!= null)
+                    mPlayer.toggleMute();
+                break;
         }
 
-    }
-
-    public void excuteRunnable(Runnable r) {
-        if (r != null) {
-            Thread t = new Thread(r);
-            t.start();
-        }
     }
 
     @Override
